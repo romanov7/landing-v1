@@ -501,6 +501,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  position: relative;
 }
 
 .field-full {
@@ -523,12 +524,113 @@ a {
   padding: 12px 12px;
   font: inherit;
   transition: border-color 160ms ease, background-color 160ms ease,
-    box-shadow 160ms ease;
+    box-shadow 160ms ease, transform 160ms ease;
 }
 
 .textarea {
   resize: vertical;
   min-height: 140px;
+}
+
+.field-message {
+  margin: 2px 0 0;
+  color: rgba(248, 113, 113, 0.95);
+  font-size: 13px;
+  line-height: 1.35;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.field.is-invalid .input,
+.field.is-invalid .textarea {
+  border-color: rgba(248, 113, 113, 0.8);
+  box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.16);
+}
+
+.field.is-invalid .field-message:not([hidden]) {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.field.is-valid .input,
+.field.is-valid .textarea {
+  border-color: rgba(34, 197, 94, 0.75);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.14);
+}
+
+.field-icon {
+  position: absolute;
+  right: 12px;
+  top: 36px;
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+}
+
+.field.is-valid .field-icon {
+  opacity: 1;
+  transform: scale(1);
+  background: rgba(34, 197, 94, 0.16);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  border-radius: 999px;
+}
+
+.field.is-valid .field-icon::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 4px;
+  width: 6px;
+  height: 10px;
+  border-right: 2px solid rgba(34, 197, 94, 0.95);
+  border-bottom: 2px solid rgba(34, 197, 94, 0.95);
+  transform: rotate(45deg);
+}
+
+.honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.form-status {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(226, 232, 240, 0.02);
+  animation: status-pop 200ms ease-out;
+}
+
+.form-status-success {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.08);
+  color: rgba(226, 232, 240, 0.92);
+}
+
+.form-status-error {
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+  color: rgba(226, 232, 240, 0.92);
+}
+
+@keyframes status-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .input:hover,

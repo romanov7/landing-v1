@@ -245,30 +245,290 @@
           </p>
         </header>
 
-        <form class="form" action="#" method="post">
+        <form
+          class="form"
+          id="contact-form"
+          action="https://formspree.io/f/xqegjrbz"
+          method="post"
+          novalidate
+        >
           <div class="field">
-            <label class="label" for="name">Имя</label>
-            <input class="input" id="name" name="name" type="text" autocomplete="name" required />
+            <label class="label" for="contact-name">Имя</label>
+            <input
+              class="input"
+              id="contact-name"
+              name="name"
+              type="text"
+              autocomplete="name"
+              required
+              minlength="2"
+              maxlength="50"
+              placeholder="Ваше имя"
+              data-validate="name"
+              aria-describedby="contact-name-error"
+            />
+            <span class="field-icon" aria-hidden="true"></span>
+            <p class="field-message" id="contact-name-error" role="alert" hidden></p>
           </div>
 
           <div class="field">
-            <label class="label" for="email">Email</label>
-            <input class="input" id="email" name="email" type="email" autocomplete="email" inputmode="email" required />
+            <label class="label" for="contact-phone">Телефон</label>
+            <input
+              class="input"
+              id="contact-phone"
+              name="phone"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+              required
+              placeholder="+7 (___) ___-__-__"
+              data-validate="phone"
+              aria-describedby="contact-phone-error"
+            />
+            <span class="field-icon" aria-hidden="true"></span>
+            <p class="field-message" id="contact-phone-error" role="alert" hidden></p>
           </div>
 
           <div class="field field-full">
-            <label class="label" for="message">Сообщение</label>
-            <textarea class="textarea" id="message" name="message" rows="6" required></textarea>
+            <label class="label" for="contact-message">Сообщение</label>
+            <textarea
+              class="textarea"
+              id="contact-message"
+              name="message"
+              rows="6"
+              required
+              minlength="10"
+              placeholder="Ваше сообщение"
+              data-validate="message"
+              aria-describedby="contact-message-error"
+            ></textarea>
+            <span class="field-icon" aria-hidden="true"></span>
+            <p class="field-message" id="contact-message-error" role="alert" hidden></p>
+          </div>
+
+          <div class="honeypot" aria-hidden="true">
+            <label for="contact-website">Website</label>
+            <input
+              id="contact-website"
+              name="website"
+              type="text"
+              tabindex="-1"
+              autocomplete="off"
+            />
           </div>
 
           <div class="form-actions field-full">
-            <button class="btn btn-primary" type="submit">Отправить</button>
+            <button class="btn btn-primary" type="submit" id="contact-submit">
+              Отправить
+            </button>
             <p class="form-note">
               Нажимая “Отправить”, вы соглашаетесь на обработку данных для ответа на
               запрос.
             </p>
+            <p class="form-status form-status-success" id="contact-success" role="status" aria-live="polite" hidden>
+              Спасибо! Ваша заявка отправлена.
+            </p>
+            <p class="form-status form-status-error" id="contact-error" role="alert" hidden>
+              Ошибка отправки. Попробуйте позже.
+            </p>
           </div>
         </form>
+
+        <script>
+          (() => {
+            const form = document.getElementById("contact-form");
+            const submit = document.getElementById("contact-submit");
+            const success = document.getElementById("contact-success");
+            const error = document.getElementById("contact-error");
+            const honeypot = document.getElementById("contact-website");
+
+            if (!form || !submit || !success || !error || !honeypot) return;
+
+            const setBusy = (busy) => {
+              submit.disabled = busy;
+              submit.setAttribute("aria-busy", busy ? "true" : "false");
+            };
+
+            const show = (el, on) => {
+              if (on) el.removeAttribute("hidden");
+              else el.setAttribute("hidden", "");
+            };
+
+            const fields = Array.from(form.querySelectorAll("[data-validate]"));
+
+            const getFieldContainer = (input) => input.closest(".field");
+            const getErrorEl = (input) =>
+              document.getElementById(`${input.id}-error`);
+
+            const setFieldState = (input, state, message = "") => {
+              const container = getFieldContainer(input);
+              const msg = getErrorEl(input);
+              if (!container || !msg) return;
+
+              container.classList.remove("is-valid", "is-invalid");
+              if (state === "valid") container.classList.add("is-valid");
+              if (state === "invalid") container.classList.add("is-invalid");
+
+              if (state === "invalid") {
+                msg.textContent = message;
+                show(msg, true);
+              } else {
+                msg.textContent = "";
+                show(msg, false);
+              }
+            };
+
+            const normalizeSpaces = (s) => s.replace(/\s+/g, " ").trim();
+
+            const validateName = (value) => {
+              const v = normalizeSpaces(value);
+              if (v.length === 0) return { ok: false, message: "Введите имя." };
+              if (v.length < 2) return { ok: false, message: "Имя слишком короткое (минимум 2 символа)." };
+              if (v.length > 50) return { ok: false, message: "Имя слишком длинное (максимум 50 символов)." };
+              if (!/^[A-Za-zА-Яа-яЁё\s-]+$/.test(v)) {
+                return { ok: false, message: "Допустимы только буквы, пробелы и дефисы." };
+              }
+              return { ok: true };
+            };
+
+            const digitsOnly = (s) => s.replace(/\D+/g, "");
+
+            const formatRuPhone = (digits) => {
+              const d = digits.slice(0, 10);
+              const a = d.slice(0, 3);
+              const b = d.slice(3, 6);
+              const c = d.slice(6, 8);
+              const e = d.slice(8, 10);
+              let out = "+7 (";
+              out += a;
+              if (a.length < 3) return out;
+              out += ") ";
+              out += b;
+              if (b.length < 3) return out;
+              out += "-";
+              out += c;
+              if (c.length < 2) return out;
+              out += "-";
+              out += e;
+              return out;
+            };
+
+            const validatePhone = (value) => {
+              if (!value || value.trim().length === 0) return { ok: false, message: "Укажите номер телефона." };
+              if (!/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/.test(value)) {
+                return { ok: false, message: "Введите телефон в формате +7 (___) ___-__-__." };
+              }
+              return { ok: true };
+            };
+
+            const validateMessage = (value) => {
+              const v = value.trim();
+              if (v.length === 0) return { ok: false, message: "Введите сообщение." };
+              if (v.length < 10) return { ok: false, message: "Сообщение слишком короткое (минимум 10 символов)." };
+              return { ok: true };
+            };
+
+            const validateField = (input) => {
+              const type = input.dataset.validate;
+              let result = { ok: true };
+              if (type === "name") result = validateName(input.value);
+              if (type === "phone") result = validatePhone(input.value);
+              if (type === "message") result = validateMessage(input.value);
+
+              setFieldState(input, result.ok ? "valid" : "invalid", result.message || "");
+              return result.ok;
+            };
+
+            const updateSubmitState = () => {
+              const allValid = fields.every((f) => validateField(f));
+              submit.disabled = !allValid;
+            };
+
+            const init = () => {
+              const phone = document.getElementById("contact-phone");
+              const name = document.getElementById("contact-name");
+              if (phone) phone.value = "+7 (";
+
+              fields.forEach((input) => {
+                input.addEventListener("blur", () => {
+                  validateField(input);
+                  updateSubmitState();
+                });
+              });
+
+              if (name) {
+                name.addEventListener("input", () => {
+                  setFieldState(name, "neutral");
+                  updateSubmitState();
+                });
+              }
+
+              if (phone) {
+                phone.addEventListener("beforeinput", (e) => {
+                  if (e.inputType !== "insertText" || typeof e.data !== "string") return;
+                  if (/\d/.test(e.data)) return;
+                  e.preventDefault();
+                });
+
+                phone.addEventListener("input", () => {
+                  const raw = phone.value.startsWith("+7") ? phone.value.slice(2) : phone.value;
+                  const digits = digitsOnly(raw);
+                  phone.value = formatRuPhone(digits);
+                  setFieldState(phone, "neutral");
+                  updateSubmitState();
+                });
+
+                phone.addEventListener("focus", () => {
+                  if (!phone.value) phone.value = "+7 (";
+                  if (!phone.value.startsWith("+7")) phone.value = "+7 (";
+                });
+              }
+
+              updateSubmitState();
+            };
+
+            form.addEventListener("submit", async (e) => {
+              e.preventDefault();
+
+              if (honeypot.value && honeypot.value.trim().length > 0) return;
+
+              show(success, false);
+              show(error, false);
+
+              const ok = fields.every((f) => validateField(f));
+              if (!ok) {
+                submit.disabled = true;
+                return;
+              }
+
+              setBusy(true);
+              try {
+                const res = await fetch(form.action, {
+                  method: "POST",
+                  body: new FormData(form),
+                  headers: { Accept: "application/json" },
+                });
+
+                if (res.ok) {
+                  form.reset();
+                  const phone = document.getElementById("contact-phone");
+                  if (phone) phone.value = "+7 (";
+                  fields.forEach((f) => setFieldState(f, "neutral"));
+                  show(success, true);
+                } else {
+                  show(error, true);
+                }
+              } catch {
+                show(error, true);
+              } finally {
+                setBusy(false);
+                updateSubmitState();
+              }
+            });
+
+            init();
+          })();
+        </script>
       </div>
     </section>
   </main>
